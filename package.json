@@ -1,0 +1,28 @@
+{
+  "name": "skylith",
+  "version": "0.0.1",
+  "description": "NodeJS-based OpenID 2.0 Provider",
+  "author": "Danny Yates <danny@codeaholics.org>",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
+  "main": "skylith.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha"
+  },
+  "repository": "https://github.com/codeaholics/skylith.git",
+  "keywords": [
+    "openid",
+    "provider"
+  ],
+  "bugs": {
+    "url": "https://github.com/codeaholics/skylith/issues"
+  },
+  "devDependencies": {
+    "mocha": "~1.12.1",
+    "chai": "~1.7.2"
+  }
+}
