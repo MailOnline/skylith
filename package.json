@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "mocha": "~1.12.1",
-    "chai": "~1.7.2"
+    "chai": "~1.7.2",
+    "express": "~3.4.7"
   }
 }
