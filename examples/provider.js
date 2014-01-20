@@ -21,11 +21,33 @@ var PORT = process.env.PORT || 3000;
 var app = express();
 
 app.use(express.urlencoded());
+app.use(express.cookieParser('some big secret'));  // Required for signed cookies
 app.use(skylith.express());
 
 app.get('/', function(req, res, next) {
     // HTML discovery
     skylith.sendHtmlDiscoveryResponse(req, res, next);
+});
+
+app.get('/login', function(req, res, next) {
+    // Skylith will send a redirect to GET this route when it wants the user to login
+    res.type('text/html');
+    res.end('<!DOCTYPE html><html><head><title>Login</title></head>' +
+            '<body><h1>Who do you want to be today?</h1>' +
+            '<form method="post">' +
+            '<input type="text" name="username" value="Danny">' +
+            '<button type="submit">Login</button>' +
+            '</form></body></html>');
+});
+
+app.get('/users/:user', function(req, res, next) {
+    // Check if the user is a valid username, and if so...
+    skylith.sendHtmlDiscoveryResponse(req, res, req.params.user, next);
+});
+
+app.post('/login', function(req, res, next) {
+    // Once you're happy with the authentication...
+    skylith.completeAuth(req, res, req.body.username, next);
 });
 
 app.listen(PORT, function() {
