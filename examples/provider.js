@@ -39,7 +39,11 @@ app.get('/', function(req, res, next) {
 });
 
 app.get('/login', function(req, res, next) {
-    // Skylith will send a redirect to GET this route when it wants the user to login
+    // Skylith will send a redirect to GET this route when it wants the user to login.
+    // Inspect req.session.openid.ax to see which attributes the RP is requesting. You
+    // SHOULD prompt the user to release these attributes. The suggest flow here is to
+    // authenticate the user (login), and then on a subsequent page request permission
+    // to release data.
     res.type('text/html');
     res.end('<!DOCTYPE html><html><head><title>Login</title></head>' +
             '<body><h1>Who do you want to be today?</h1>' +
@@ -57,8 +61,20 @@ app.get('/users/:user', function(req, res, next) {
 
 app.post('/login', function(req, res, next) {
     if ('login' in req.body) {
+        // Having got permission to release data, form an AX response:
+        var axResponse = {
+            'http://axschema.org/namePerson/friendly': req.body.username,
+            'http://axschema.org/contact/email': req.body.username.toLowerCase() + '@example.com',
+            'http://axschema.org/namePerson': req.body.username + ' Smith'
+        }
+
+        var authResponse = {
+            identity: 'http://localhost:3000/users/' + req.body.username.toLowerCase(),
+            ax: axResponse
+        }
+
         // Once you're happy with the authentication...
-        skylith.completeAuth(req, res, req.body.username, next);
+        skylith.completeAuth(req, res, authResponse, next);
     } else if ('cancel' in req.body) {
         // User cancelled authentication
         skylith.cancelAuth(req, res, next);
