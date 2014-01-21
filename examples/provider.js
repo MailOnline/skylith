@@ -12,11 +12,16 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+var PORT = process.env.PORT || 3000,
+    PROVIDER_ENDPOINT = 'http://localhost:' + PORT + '/';
+
 var express = require('express'),
     Skylith = require('../skylith'),
-    skylith = new Skylith();
+    skylith = new Skylith({
+        providerEndpoint: PROVIDER_ENDPOINT,
+        loginUrl: PROVIDER_ENDPOINT + 'login'
+    });
 
-var PORT = process.env.PORT || 3000;
 
 var app = express();
 
@@ -56,7 +61,7 @@ app.get('/login', function(req, res, next) {
 
 app.get('/users/:user', function(req, res, next) {
     // Check if the user is a valid username, and if so...
-    skylith.sendDiscoveryResponse(req, res, req.params.user, next);
+    skylith.sendDiscoveryResponse(req, res, localId(req.params.user), next);
 });
 
 app.post('/login', function(req, res, next) {
@@ -69,7 +74,7 @@ app.post('/login', function(req, res, next) {
         }
 
         var authResponse = {
-            identity: 'http://localhost:3000/users/' + req.body.username.toLowerCase(),
+            identity: localId(req.body.username),
             ax: axResponse
         }
 
@@ -84,5 +89,9 @@ app.post('/login', function(req, res, next) {
 });
 
 app.listen(PORT, function() {
-    console.log('Running on http://localhost:' + PORT);
+    console.log('Running on ' + PROVIDER_ENDPOINT);
 });
+
+function localId(username) {
+    return PROVIDER_ENDPOINT + 'users/' + username.toLowerCase();
+}
