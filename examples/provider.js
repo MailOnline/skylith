@@ -35,7 +35,8 @@ app.get('/login', function(req, res, next) {
             '<body><h1>Who do you want to be today?</h1>' +
             '<form method="post">' +
             '<input type="text" name="username" value="Danny">' +
-            '<button type="submit">Login</button>' +
+            '<button type="submit" name="login">Login</button>' +
+            '<button type="submit" name="cancel">Cancel</button>' +
             '</form></body></html>');
 });
 
@@ -45,8 +46,15 @@ app.get('/users/:user', function(req, res, next) {
 });
 
 app.post('/login', function(req, res, next) {
-    // Once you're happy with the authentication...
-    skylith.completeAuth(req, res, req.body.username, next);
+    if ('login' in req.body) {
+        // Once you're happy with the authentication...
+        skylith.completeAuth(req, res, req.body.username, next);
+    } else if ('cancel' in req.body) {
+        // User cancelled authentication
+        skylith.cancelAuth(req, res, next);
+    } else {
+        next();
+    }
 });
 
 app.listen(PORT, function() {
