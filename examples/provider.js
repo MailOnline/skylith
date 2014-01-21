@@ -21,7 +21,17 @@ var PORT = process.env.PORT || 3000;
 var app = express();
 
 app.use(express.urlencoded());
-app.use(express.cookieParser('some big secret'));  // Required for signed cookies
+app.use(express.cookieParser());
+app.use(express.session({
+    key: 's',
+    // store: we're using the default memory store here. Don't use that in production! See http://www.senchalabs.org/connect/session.html#warning
+    secret: 'some big secret for signed cookies',
+    cookie: {
+        signed: true,
+        httpOnly: true,
+        maxAge: 1 * 60 * 1000   // Skylith uses sessions for maintaining state between calls so this can be quite short
+    }
+}));
 app.use(skylith.express());
 
 app.get('/', function(req, res, next) {
