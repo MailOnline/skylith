@@ -25,8 +25,7 @@ app.use(express.cookieParser('some big secret'));  // Required for signed cookie
 app.use(skylith.express());
 
 app.get('/', function(req, res, next) {
-    // HTML discovery
-    skylith.sendHtmlDiscoveryResponse(req, res, next);
+    skylith.sendDiscoveryResponse(req, res, next);
 });
 
 app.get('/login', function(req, res, next) {
@@ -42,7 +41,7 @@ app.get('/login', function(req, res, next) {
 
 app.get('/users/:user', function(req, res, next) {
     // Check if the user is a valid username, and if so...
-    skylith.sendHtmlDiscoveryResponse(req, res, req.params.user, next);
+    skylith.sendDiscoveryResponse(req, res, req.params.user, next);
 });
 
 app.post('/login', function(req, res, next) {
