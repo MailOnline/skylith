@@ -13,7 +13,6 @@ Refactorings
 ============
 
 * Maybe stick 'request' on 'req' as 'req.openid' or so
-* Clarify the interface with the provider service (see examples)
 
 OSIS Testing conformance
 ========================

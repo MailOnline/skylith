@@ -20,7 +20,7 @@ var express = require('express'),
     Skylith = require('../skylith'),
     skylith = new Skylith({
         providerEndpoint: PROVIDER_ENDPOINT,
-        loginUrl: ADDRESS + 'login'
+        checkAuth: checkAuth
     });
 
 var app = express();
@@ -34,17 +34,16 @@ app.use(express.session({
     cookie: {
         signed: true,
         httpOnly: true,
-        maxAge: 1 * 60 * 1000   // Skylith uses sessions for maintaining state between calls so this can be quite short
+        maxAge: 1 * 60 * 1000   // We use sessions for maintaining state between Skylith calls so this can be quite short
     }
 }));
 app.use('/openid', skylith.express());
 
 app.get('/login', function(req, res, next) {
-    // Skylith will send a redirect to GET this route when it wants the user to login.
-    // Inspect req.session.openid.ax to see which attributes the RP is requesting. You
-    // SHOULD prompt the user to release these attributes. The suggest flow here is to
-    // authenticate the user (login), and then on a subsequent page request permission
-    // to release data.
+    // Inspect 'ax' in the stored context to see which attributes the RP is requesting.
+    // You SHOULD prompt the user to release these attributes. The suggested flow here is
+    // to authenticate the user (login), and then on a subsequent page request
+    // permission to release data.
     res.type('text/html');
     res.end('<!DOCTYPE html><html><head><title>Login</title></head>' +
             '<body><h1>Who do you want to be today?</h1>' +
@@ -57,7 +56,12 @@ app.get('/login', function(req, res, next) {
 
 app.post('/login', function(req, res, next) {
     if ('login' in req.body) {
-        // Having got permission to release data, form an AX response:
+        // Check the login credentials. If you're unhappy do whatever you would do. If you're
+        // happy then do this...
+
+        // Having got permission to release data, form an AX response (this should be done in
+        // conjunction with the 'ax' attribute in the stored context to see what (if any)
+        // attributes the Relying Party wants):
         var axResponse = {
             'http://axschema.org/namePerson/friendly': req.body.username,
             'http://axschema.org/contact/email': req.body.username.toLowerCase() + '@example.com',
@@ -65,15 +69,15 @@ app.post('/login', function(req, res, next) {
         }
 
         var authResponse = {
+            context: req.session.skylith,
             identity: req.body.username,
             ax: axResponse
         }
 
-        // Once you're happy with the authentication...
         skylith.completeAuth(req, res, authResponse, next);
     } else if ('cancel' in req.body) {
         // User cancelled authentication
-        skylith.cancelAuth(req, res, next);
+        skylith.rejectAuth(req, res, req.session.skylith, next);
     } else {
         next();
     }
@@ -83,3 +87,20 @@ app.listen(PORT, function() {
     console.log('Running on ' + ADDRESS);
 });
 
+
+function checkAuth(req, res, allowInteraction, context) {
+    // Skylith wants to know if the user is already logged in or not. Check your session/cookies/whatever.
+    // * If the user is already logged in, call skylith.completeAuth()
+    // * If the user is NOT logged in and allowInteraction is true, store context somewhere (suggest not
+    //   in a cookie because it can be quite big), prompt the user to login and when they're done call
+    //   skylith.completeAuth()
+    // * If the user is NOT logged in and allowInteraction is false, call skylith.rejectAuth()
+
+    // This example assumes you're not already logged in
+    if (allowInteraction) {
+        req.session.skylith = context;
+        res.redirect(302, '/login');
+    } else {
+        // TODO - check_immediate isn't implemented yet
+    }
+}
