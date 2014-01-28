@@ -13,15 +13,15 @@
 //    limitations under the License.
 
 var PORT = process.env.PORT || 3000,
-    PROVIDER_ENDPOINT = 'http://localhost:' + PORT + '/';
+    ADDRESS = 'http://localhost:' + PORT + '/',
+    PROVIDER_ENDPOINT = ADDRESS + 'openid';
 
 var express = require('express'),
     Skylith = require('../skylith'),
     skylith = new Skylith({
         providerEndpoint: PROVIDER_ENDPOINT,
-        loginUrl: PROVIDER_ENDPOINT + 'login'
+        loginUrl: ADDRESS + 'login'
     });
-
 
 var app = express();
 
@@ -37,11 +37,7 @@ app.use(express.session({
         maxAge: 1 * 60 * 1000   // Skylith uses sessions for maintaining state between calls so this can be quite short
     }
 }));
-app.use(skylith.express());
-
-app.get('/', function(req, res, next) {
-    skylith.sendDiscoveryResponse(req, res, next);
-});
+app.use('/openid', skylith.express());
 
 app.get('/login', function(req, res, next) {
     // Skylith will send a redirect to GET this route when it wants the user to login.
@@ -59,11 +55,6 @@ app.get('/login', function(req, res, next) {
             '</form></body></html>');
 });
 
-app.get('/users/:user', function(req, res, next) {
-    // Check if the user is a valid username, and if so...
-    skylith.sendDiscoveryResponse(req, res, localId(req.params.user), next);
-});
-
 app.post('/login', function(req, res, next) {
     if ('login' in req.body) {
         // Having got permission to release data, form an AX response:
@@ -74,7 +65,7 @@ app.post('/login', function(req, res, next) {
         }
 
         var authResponse = {
-            identity: localId(req.body.username),
+            identity: req.body.username,
             ax: axResponse
         }
 
@@ -89,9 +80,6 @@ app.post('/login', function(req, res, next) {
 });
 
 app.listen(PORT, function() {
-    console.log('Running on ' + PROVIDER_ENDPOINT);
+    console.log('Running on ' + ADDRESS);
 });
 
-function localId(username) {
-    return PROVIDER_ENDPOINT + 'users/' + username.toLowerCase();
-}
