@@ -74,10 +74,10 @@ app.post('/login', function(req, res, next) {
             ax: axResponse
         }
 
-        skylith.completeAuth(req, res, authResponse, next);
+        skylith.completeAuth(req, res, authResponse);
     } else if ('cancel' in req.body) {
         // User cancelled authentication
-        skylith.rejectAuth(req, res, req.session.skylith, next);
+        skylith.rejectAuth(req, res, req.session.skylith);
     } else {
         next();
     }
