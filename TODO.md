@@ -8,6 +8,7 @@ Things to do
 * Convert this TODO list into GitHub issues ;-)
 * PAPE?
 * SReg?
+* Check nonce expiry time in check_auth
 
 Refactorings
 ============
