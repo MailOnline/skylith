@@ -14,11 +14,12 @@ var currentCheckAuth;
 //     console.log(req.method, req.url);
 //     next();
 // });
-
+app.use(express.urlencoded());
 app.use('/openid', skylith.express());
 
 exports = module.exports = {
     get: get,
+    post: post,
     endpoint: endpoint,
     checkAuth: checkAuth,
     openIdFields: openIdFields,
@@ -36,6 +37,18 @@ function get(path, params) {
         path = url.format(parsed);
     }
     return request(app).get(path).expect(standardExpectations);
+}
+
+function post(path, params) {
+    var req = request(app).post(path);
+    if (params) {
+        req.type('form');
+        for (var key in params) {
+            req.send('openid.' + key + '=' + params[key]);
+        }
+        req.send('openid.ns=' + OPENID_NS);
+    }
+    return req.expect(standardExpectations);
 }
 
 function checkAuthDelegate() {
