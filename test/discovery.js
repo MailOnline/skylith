@@ -11,7 +11,7 @@ describe('Discovery', function() {
         it('returns server document', function(done) {
             testHelper
                 .get('/openid')
-                .set('Accept', 'application/xrds+xml')
+                .accept('application/xrds+xml')
                 .expect(200, getExpectedXRDSDocument('server'))
                 .expect('Content-Type', 'application/xrds+xml')
                 .end(done);
@@ -20,7 +20,7 @@ describe('Discovery', function() {
         it('returns user document', function(done) {
             testHelper
                 .get('/openid?u=charlie')
-                .set('Accept', 'application/xrds+xml')
+                .accept('application/xrds+xml')
                 .expect(200, getExpectedXRDSDocument('signon'))
                 .expect('Content-Type', 'application/xrds+xml')
                 .end(done);
@@ -31,7 +31,7 @@ describe('Discovery', function() {
         it('returns server document', function(done) {
             testHelper
                 .get('/openid')
-                .set('Accept', 'text/html')
+                .accept('text/html')
                 .expect(200)
                 .expect('Content-Type', 'text/html')
                 .expect(function(res) {
@@ -45,7 +45,7 @@ describe('Discovery', function() {
         it('returns user document', function(done) {
             testHelper
                 .get('/openid?u=charlie')
-                .set('Accept', 'text/html')
+                .accept('text/html')
                 .expect(200)
                 .expect('Content-Type', 'text/html')
                 .expect(function(res) {
@@ -60,7 +60,7 @@ describe('Discovery', function() {
     it('rejects unknown content types', function(done) {
         testHelper
             .get('/openid?u=charlie')
-            .set('Accept', 'application/json')
+            .accept('application/json')
             .expect(406)
             .end(done);
     });

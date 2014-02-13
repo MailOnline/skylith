@@ -28,25 +28,31 @@ exports = module.exports = {
 }
 
 function get(path, params) {
+    var req = request(app).get(path),
+        args = {};
+
     if (params) {
-        var parsed = url.parse(path, true);
+        // req.type('form');
         for (var key in params) {
-            parsed.query['openid.' + key] = params[key];
+            args['openid.' + key] = params[key];
         }
-        parsed.query['openid.ns'] = OPENID_NS;
-        path = url.format(parsed);
+        args['openid.ns'] = OPENID_NS;
+        req.query(args);
     }
-    return request(app).get(path).expect(standardExpectations);
+    return req.expect(standardExpectations);
 }
 
 function post(path, params) {
-    var req = request(app).post(path);
+    var req = request(app).post(path),
+        args = {};
+
     if (params) {
         req.type('form');
         for (var key in params) {
-            req.send('openid.' + key + '=' + params[key]);
+            args['openid.' + key] = params[key];
         }
-        req.send('openid.ns=' + OPENID_NS);
+        args['openid.ns'] = OPENID_NS;
+        req.send(args);
     }
     return req.expect(standardExpectations);
 }

@@ -7,7 +7,6 @@ var testHelper = require('./test-helper'),
     checkAuth = testHelper.checkAuth;
 
 describe('Login', function() {
-
     ['get', 'post'].forEach(function(verb) {
         it('checkid_setup with ' + verb.toUpperCase(), function(done) {
             testHelper[verb]('/openid', {
