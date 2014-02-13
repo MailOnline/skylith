@@ -8,7 +8,7 @@ var testHelper = require('./test-helper'),
 
 describe('Login', function() {
     ['get', 'post'].forEach(function(verb) {
-        it('checkid_setup with ' + verb.toUpperCase(), function(done) {
+        it('successful checkid_setup with ' + verb.toUpperCase(), function(done) {
             testHelper[verb]('/openid', {
                     mode: 'checkid_setup',
                     realm: 'http://localhost/',
@@ -16,7 +16,6 @@ describe('Login', function() {
                 })
                 .expect(302)
                 .expect(checkAuth({
-                    succeed: true,
                     identity: 'bob@example.com',
                     ensureInteractive: true
                 }))
@@ -26,6 +25,24 @@ describe('Login', function() {
                     identity: testHelper.identity('bob@example.com')
                 }))
                 .end(done);
+        });
+
+        it('cancelled checkid_setup with ' + verb.toUpperCase(), function(done) {
+        testHelper[verb]('/openid', {
+                mode: 'checkid_setup',
+                realm: 'http://localhost/',
+                return_to: 'http://localhost/here'
+            })
+            .expect(302)
+            .expect(checkAuth({
+                succeed: false,
+                identity: 'bob@example.com',
+                ensureInteractive: true
+            }))
+            .expect(openIdFields({
+                mode: 'cancel'
+            }))
+            .end(done);
         });
     });
 });
