@@ -83,4 +83,3 @@ describe('checkid_setup/checkid_immediate: main flow', function() {
         });
     });
 });
-

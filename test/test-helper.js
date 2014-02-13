@@ -8,7 +8,9 @@ var express = require('express'),
     skylith = new Skylith({ providerEndpoint: endpoint, checkAuth: checkAuthDelegate }),
     app = express();
 
-var OPENID_NS = 'http://specs.openid.net/auth/2.0';
+var OPENID_NS = 'http://specs.openid.net/auth/2.0'
+    HEADER_DELEGATED = 'X-SkylithTests-Delegated',
+    HEADER_DELEGATED_METHOD = 'X-SkylithTests-Method';
 
 var currentCheckAuth;
 
@@ -16,17 +18,37 @@ var currentCheckAuth;
 //     console.log(req.method, req.url);
 //     next();
 // });
+
 app.use(express.urlencoded());
 app.use('/openid', skylith.express());
+app.use(app.router);
+
+app.all('/openid', handleDelegated);
+app.all('/openid/*', handleDelegated);
 
 exports = module.exports = {
     get: get,
     post: post,
+    error: error,
     endpoint: endpoint,
     checkAuth: checkAuth,
     openIdFields: openIdFields,
     dumpResponse: dumpResponse,
+    isDelegated: isDelegated,
     identity: function(name) { return endpoint + '?u=' + encodeURIComponent(name); }
+}
+
+function handleDelegated(req, res, next) {
+    res.set(HEADER_DELEGATED, 'true');
+    res.set(HEADER_DELEGATED_METHOD, req.method);
+    next();
+}
+
+function isDelegated() {
+    return function(res) {
+        assert.equal(res.get(HEADER_DELEGATED), 'true');
+        assert.equal(res.get(HEADER_DELEGATED_METHOD), res.req.method);
+    }
 }
 
 function get(path, params) {
@@ -59,9 +81,27 @@ function post(path, params) {
     return req.expect(standardExpectations);
 }
 
+function escapeRegExp(s) {
+    return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+function error(message) {
+    return function(res) {
+        // TODO the status code and ns checks should be standard checks for 'error' mode responses
+        if (res.req.method === 'POST') {
+            assert.equal(res.status, 400);
+            assert.match(res.text, new RegExp('^ns:' + escapeRegExp(OPENID_NS) + '$', 'm'));
+            assert.match(res.text, new RegExp('^error:' + escapeRegExp(message) + '$', 'm'));
+        } else {
+            assert.equal(res.status, 302);
+            var query = responseQuery(res);
+            assert.equal(query['openid.error'], message);
+        }
+    }
+}
+
 function checkAuthDelegate() {
-    var args = Array.prototype.slice.call(arguments);
-    currentCheckAuth.apply(null, args);
+    currentCheckAuth.apply(null, arguments);
 }
 
 function checkAuth(options) {
@@ -119,10 +159,12 @@ function errorMessage(what, actual, expected) {
 }
 
 function responseQuery(res) {
+    // TODO this only handles 302-type responses
     return url.parse(res.get('location'), true).query;
 }
 
 function standardExpectations(res) {
+    // TODO this only handles 302-type responses
     var reqQuery = url.parse(res.req.path, true).query;
 
     // Support discovery queries which aren't standard OpenID queries
@@ -165,5 +207,6 @@ var expectationsByMode = {
         if (resQuery['openid.identity'] && signed.indexOf('identity') == -1) return 'Signed fields must include identity when identity is present';
     },
     'cancel': function(req, res, reqQuery, resQuery) {},
-    'setup_needed': function(req, res, reqQuery, resQuery) {}
+    'setup_needed': function(req, res, reqQuery, resQuery) {},
+    'error': function(req, res, reqQuery, resQuery) {}
 }
