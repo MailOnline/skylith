@@ -1,16 +1,16 @@
 var util = require('util'),
     chai = require('chai'),
-    request = require('supertest'),
-    testHelper = require('./test-helper'),
-    assert = chai.assert,
-    app = testHelper.app,
+    assert = chai.assert;
+
+var testHelper = require('./test-helper'),
+    endpoint = testHelper.endpoint,
     openIdFields = testHelper.openIdFields,
     checkAuth = testHelper.checkAuth;
 
 describe('Skylith', function() {
     describe('discovery', function() {
         it('returns server XRDS document', function(done) {
-            request(app)
+            testHelper
                 .get('/openid')
                 .set('Accept', 'application/xrds+xml')
                 .expect(200, getExpectedXRDSDocument('server'))
@@ -18,7 +18,7 @@ describe('Skylith', function() {
         });
 
         it('returns user XRDS document', function(done) {
-            request(app)
+            testHelper
                 .get('/openid?u=charlie')
                 .set('Accept', 'application/xrds+xml')
                 .expect(200, getExpectedXRDSDocument('signon'))
@@ -34,8 +34,13 @@ describe('Skylith', function() {
 
     describe('login', function() {
         it('checkid_setup with GET', function(done) {
-            request(app)
-                .get('/openid?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.realm=http://localhost/&openid.return_to=http://localhost/here')
+            testHelper
+                .get('/openid', {
+                    ns: 'http://specs.openid.net/auth/2.0',
+                    mode: 'checkid_setup',
+                    realm: 'http://localhost/',
+                    return_to: 'http://localhost/here'
+                })
                 .expect(302)
                 .expect(checkAuth({
                     succeed: true,
@@ -43,8 +48,10 @@ describe('Skylith', function() {
                     ensureInteractive: true
                 }))
                 .expect(openIdFields({
-                    'openid.ns': 'http://specs.openid.net/auth/2.0',
-                    'openid.mode': 'id_res'
+                    'mode': 'id_res',
+                    'claimed_id': endpoint + '?u=' + encodeURIComponent('bob@example.com'),
+                    'identity': endpoint + '?u=' + encodeURIComponent('bob@example.com')
+                    // sig, signed???
                 }))
                 .end(done);
         });
@@ -63,5 +70,5 @@ var XRDSTemplate = '<?xml version="1.0" encoding="UTF-8"?>' +
                    '</xrds:XRDS>';
 
 function getExpectedXRDSDocument(type) {
-    return util.format(XRDSTemplate, type, testHelper.endpoint);
+    return util.format(XRDSTemplate, type, endpoint);
 }
