@@ -6,7 +6,7 @@ var testHelper = require('./test-helper'),
     openIdFields = testHelper.openIdFields,
     checkAuth = testHelper.checkAuth;
 
-describe('Login', function() {
+describe('checkid_setup/checkid_immediate: main flow', function() {
     ['get', 'post'].forEach(function(verb) {
         it('successful checkid_setup with ' + verb.toUpperCase(), function(done) {
             testHelper[verb]('/openid', {
