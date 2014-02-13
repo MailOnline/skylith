@@ -56,6 +56,14 @@ describe('Discovery', function() {
                 .end(done);
         });
     });
+
+    it('rejects unknown content types', function(done) {
+        testHelper
+            .get('/openid?u=charlie')
+            .set('Accept', 'application/json')
+            .expect(406)
+            .end(done);
+    });
 });
 
 var XRDSTemplate = '<?xml version="1.0" encoding="UTF-8"?>' +
