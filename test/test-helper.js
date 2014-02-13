@@ -16,10 +16,35 @@ app.use('/openid', skylith.express());
 exports = module.exports = {
     endpoint: endpoint,
     app: app,
-    setCheckAuth: function(checkAuth) { currentCheckAuth = checkAuth; }
+    expectCheckAuth: expectCheckAuth
 }
 
 function checkAuth() {
     var args = Array.prototype.slice.call(arguments);
-    currentCheckAuth.call(null, args);
+    currentCheckAuth.apply(null, args);
+}
+
+function expectCheckAuth(options) {
+    if (typeof currentCheckAuth !== 'undefined') throw new Error('expectCheckAuth called twice without a callback');
+
+    var wasCalled = false;
+
+    currentCheckAuth = function(req, res, allowInteractive, context) {
+        var authResponse = {
+            context: context,
+            identity: options.identity
+        }
+
+        wasCalled = true;
+
+        if (options.succeed) {
+            skylith.completeAuth(req, res, authResponse);
+        }
+    }
+
+    return function(res) {
+        currentCheckAuth = undefined;
+
+        if (!wasCalled) return 'checkAuth wasn\'t called';
+    };
 }
