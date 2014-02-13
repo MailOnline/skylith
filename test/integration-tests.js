@@ -36,7 +36,6 @@ describe('Skylith', function() {
         it('checkid_setup with GET', function(done) {
             testHelper
                 .get('/openid', {
-                    ns: 'http://specs.openid.net/auth/2.0',
                     mode: 'checkid_setup',
                     realm: 'http://localhost/',
                     return_to: 'http://localhost/here'
@@ -51,7 +50,6 @@ describe('Skylith', function() {
                     'mode': 'id_res',
                     'claimed_id': endpoint + '?u=' + encodeURIComponent('bob@example.com'),
                     'identity': endpoint + '?u=' + encodeURIComponent('bob@example.com')
-                    // sig, signed???
                 }))
                 .end(done);
         });

@@ -31,7 +31,8 @@ function get(path, params) {
         for (key in params) {
             parsed.query['openid.' + key] = params[key];
         }
-       path = url.format(parsed);
+        parsed.query['openid.ns'] = OPENID_NS;
+        path = url.format(parsed);
     }
     return request(app).get(path).expect(standardExpectations);
 }
@@ -117,5 +118,27 @@ var expectationsByMode = {
     'id_res': function(req, res, reqQuery, resQuery) {
         if (resQuery['openid.op_endpoint'] !== endpoint) return errorMessage('openid.op_endpoint', resQuery, endpoint);
         if (resQuery['openid.return_to'] !== reqQuery['openid.return_to']) return errorMessage('openid.return_to', resQuery, reqQuery['openid.return_to']);
-    }
+        if (!resQuery['openid.assoc_handle']) return errorMessage('openid.assoc_handle', resQuery, 'a value');
+        if (!resQuery['openid.sig']) return errorMessage('openid.sig', resQuery, 'a value');
+
+        if (!resQuery['openid.response_nonce']) return errorMessage('openid.response_nonce', resQuery, 'a value');
+        var nonce = resQuery['openid.response_nonce'],
+            nonceTime = Date.parse(nonce.substr(0, 20)),
+            nonceTimezone = nonce.charAt(19),
+            nonceAppendix = nonce.substr(20);
+
+        if (Math.abs(Date.now() - nonceTime) > 2000) return 'Nonce time should be current server time';
+        if (nonceTimezone !== 'Z') return errorMessage('Nonce timezone', nonceTimezone, 'Z');
+        if (nonceAppendix.length < 1) return errorMessage('None appendix', 'empty', 'a value');
+
+        if (!resQuery['openid.signed']) return errorMessage('openid.signed', resQuery, 'a value');
+        var signed = resQuery['openid.signed'].split(',');
+        if (signed.indexOf('op_endpoint') == -1) return 'Signed fields must include op_endpoint';
+        if (signed.indexOf('return_to') == -1) return 'Signed fields must include return_to';
+        if (signed.indexOf('response_nonce') == -1) return 'Signed fields must include response_nonce';
+        if (signed.indexOf('assoc_handle') == -1) return 'Signed fields must include assoc_handle';
+        if (resQuery['openid.claimed_id'] && signed.indexOf('claimed_id') == -1) return 'Signed fields must include claimed_id when claimed_id is present';
+        if (resQuery['openid.identity'] && signed.indexOf('identity') == -1) return 'Signed fields must include identity when identity is present';
+    },
+    'cancel': function(req, res, reqQuery, resQuery) {}
 }
