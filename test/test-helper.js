@@ -22,7 +22,8 @@ exports = module.exports = {
     endpoint: endpoint,
     checkAuth: checkAuth,
     openIdFields: openIdFields,
-    dumpResponse: dumpResponse
+    dumpResponse: dumpResponse,
+    identity: function(name) { return endpoint + '?u=' + encodeURIComponent(name); }
 }
 
 function get(path, params) {
