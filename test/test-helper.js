@@ -29,7 +29,7 @@ exports = module.exports = {
 function get(path, params) {
     if (params) {
         var parsed = url.parse(path, true);
-        for (key in params) {
+        for (var key in params) {
             parsed.query['openid.' + key] = params[key];
         }
         parsed.query['openid.ns'] = OPENID_NS;
@@ -79,7 +79,7 @@ function checkAuth(options) {
 function openIdFields(expected) {
     return function(res) {
         var fields = responseQuery(res);
-        for (key in expected) {
+        for (var key in expected) {
             if (expected[key] !== fields['openid.' + key]) return errorMessage('openid.' + key, fields, expected[key]);
         }
     };
