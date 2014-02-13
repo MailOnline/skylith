@@ -3,7 +3,6 @@ Things to do
 
 * TODO items from source
 * RP validation
-* checkid_immediate
 * Test suite. Replicate [OSIS I5 suite](http://test-id.org/Default.aspx) if possible
 * Convert this TODO list into GitHub issues ;-)
 * PAPE?

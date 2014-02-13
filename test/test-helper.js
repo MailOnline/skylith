@@ -1,6 +1,8 @@
 var express = require('express'),
     url = require('url'),
     request = require('supertest'),
+    chai = require('chai'),
+    assert = chai.assert,
     Skylith = require('../skylith'),
     endpoint = 'http://localhost:3030/openid',  // This doesn't have to be real!
     skylith = new Skylith({ providerEndpoint: endpoint, checkAuth: checkAuthDelegate }),
@@ -131,7 +133,9 @@ function standardExpectations(res) {
     if (resQuery['openid.ns'] !== OPENID_NS) return errorMessage('openid.ns', resQuery, OPENID_NS);
     if (!resQuery['openid.mode']) return errorMessage('openid.mode', resQuery, 'a value');
 
-    return expectationsByMode[resQuery['openid.mode']](res.req, res, reqQuery, resQuery);
+    var expectations = expectationsByMode[resQuery['openid.mode']];
+    assert.isFunction(expectations, 'Response mode ' + resQuery['openid.mode'] + ' has no expectations defined');
+    return expectations(res.req, res, reqQuery, resQuery);
 }
 
 var expectationsByMode = {
@@ -160,5 +164,6 @@ var expectationsByMode = {
         if (resQuery['openid.claimed_id'] && signed.indexOf('claimed_id') == -1) return 'Signed fields must include claimed_id when claimed_id is present';
         if (resQuery['openid.identity'] && signed.indexOf('identity') == -1) return 'Signed fields must include identity when identity is present';
     },
-    'cancel': function(req, res, reqQuery, resQuery) {}
+    'cancel': function(req, res, reqQuery, resQuery) {},
+    'setup_needed': function(req, res, reqQuery, resQuery) {}
 }
