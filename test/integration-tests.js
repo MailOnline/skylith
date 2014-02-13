@@ -3,7 +3,9 @@ var util = require('util'),
     request = require('supertest'),
     testHelper = require('./test-helper'),
     assert = chai.assert,
-    app = testHelper.app;
+    app = testHelper.app,
+    openIdFields = testHelper.openIdFields,
+    checkAuth = testHelper.checkAuth;
 
 describe('Skylith', function() {
     describe('discovery', function() {
@@ -32,16 +34,18 @@ describe('Skylith', function() {
 
     describe('login', function() {
         it('checkid_setup with GET', function(done) {
-            var checkAuth = testHelper.expectCheckAuth({
-                succeed: true,
-                identity: 'bob@example.com',
-                ensureInteractive: true
-            });
-
             request(app)
                 .get('/openid?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.realm=http://localhost/&openid.return_to=http://localhost/here')
                 .expect(302)
-                .expect(checkAuth)
+                .expect(checkAuth({
+                    succeed: true,
+                    identity: 'bob@example.com',
+                    ensureInteractive: true
+                }))
+                .expect(openIdFields({
+                    'openid.ns': 'http://specs.openid.net/auth/2.0',
+                    'openid.mode': 'id_res'
+                }))
                 .end(done);
         });
     });
