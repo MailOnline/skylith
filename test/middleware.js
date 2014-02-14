@@ -19,7 +19,7 @@ describe('Middleware', function() {
 
     it('sends a direct error response for unrecognised POST requests', function(done) {
         testHelper.post('/openid', {
-                mode: 'unknown'
+                mode: 'badmode'
             })
             .expect(error('Unknown or unsupported direct request'))
             .end(done);
@@ -27,7 +27,7 @@ describe('Middleware', function() {
 
     it('sends an indirect error response for unrecognised GET requests', function(done) {
         testHelper.get('/openid', {
-                mode: 'unknown',
+                mode: 'badmode',
                 return_to: 'http://localhost/here'
             })
             .expect(error('Unknown or unsupported indirect request'))

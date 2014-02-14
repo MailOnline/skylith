@@ -12,6 +12,13 @@ var OPENID_NS = 'http://specs.openid.net/auth/2.0'
     HEADER_DELEGATED = 'X-SkylithTests-Delegated',
     HEADER_DELEGATED_METHOD = 'X-SkylithTests-Method';
 
+var COMM_TYPE = {
+    'checkid_setup': 'indirect',
+    'checkid_immediate': 'indirect',
+    'associate': 'direct',
+    'check_authentication': 'direct'
+}
+
 var currentCheckAuth;
 
 // app.use('/', function(req, res, next) {
@@ -33,7 +40,6 @@ exports = module.exports = {
     endpoint: endpoint,
     checkAuth: checkAuth,
     openIdFields: openIdFields,
-    dumpResponse: dumpResponse,
     isDelegated: isDelegated,
     identity: function(name) { return endpoint + '?u=' + encodeURIComponent(name); }
 }
@@ -63,7 +69,7 @@ function get(path, params) {
         args['openid.ns'] = OPENID_NS;
         req.query(args);
     }
-    return req.expect(standardExpectations);
+    return req.expect(standardExpectations(args));
 }
 
 function post(path, params) {
@@ -78,24 +84,47 @@ function post(path, params) {
         args['openid.ns'] = OPENID_NS;
         req.send(args);
     }
-    return req.expect(standardExpectations);
+    return req.expect(standardExpectations(args));
 }
 
-function escapeRegExp(s) {
-    return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+function calculateCommType(res, requestMode) {
+    var commType = COMM_TYPE[requestMode];
+
+    if (!commType) {
+        // We can't tell the correct direct/indirect method using the openid.mode, so guess based on the HTTP method.
+        if (res.req.method == 'GET') {
+            // GETs are always indirect ("All direct requests are POSTs", ss 5.1.1)
+            commType = 'indirect';
+        } else if (res.req.method == 'POST') {
+            // Assume direct; this matches the behaviour of the OSIS test suite
+            commType = 'direct';
+        }
+    }
+
+    return commType;
 }
 
 function error(message) {
     return function(res) {
-        // TODO the status code and ns checks should be standard checks for 'error' mode responses
-        if (res.req.method === 'POST') {
-            assert.equal(res.status, 400);
-            assert.match(res.text, new RegExp('^ns:' + escapeRegExp(OPENID_NS) + '$', 'm'));
-            assert.match(res.text, new RegExp('^error:' + escapeRegExp(message) + '$', 'm'));
+        var commType = calculateCommType(res, res.reqParams['openid.mode']);
+
+        if (commType == 'indirect') {
+            checkIndirectError();
+        } else if (commType == 'direct') {
+            checkDirectError();
         } else {
+            return 'Could not determing communication type (direct/indirect)'
+        }
+
+        function checkDirectError() {
+            assert.equal(res.status, 400);
+            assert.equal(res.resParams['openid.error'], message);
+        }
+
+        function checkIndirectError() {
             assert.equal(res.status, 302);
-            var query = responseQuery(res);
-            assert.equal(query['openid.error'], message);
+            assert.equal(res.resParams['openid.mode'], 'error');
+            assert.equal(res.resParams['openid.error'], message);
         }
     }
 }
@@ -134,20 +163,16 @@ function checkAuth(options) {
         currentCheckAuth = undefined;
 
         if (error) return error;
-    };
+    }
 }
 
 function openIdFields(expected) {
     return function(res) {
-        var fields = responseQuery(res);
+        var resParams = res.resParams;
         for (var key in expected) {
-            if (expected[key] !== fields['openid.' + key]) return errorMessage('openid.' + key, fields, expected[key]);
+            if (expected[key] !== resParams['openid.' + key]) return errorMessage('openid.' + key, resParams, expected[key]);
         }
-    };
-}
-
-function dumpResponse(res) {
-    console.log(responseQuery(res));
+    }
 }
 
 function errorMessage(what, actual, expected) {
@@ -158,37 +183,69 @@ function errorMessage(what, actual, expected) {
     return what + ' was ' + actual + '. Expected ' + expected;
 }
 
-function responseQuery(res) {
-    // TODO this only handles 302-type responses
+function parseDirectResponseParams(res) {
+    var params = {};
+    res.text.split('\n').forEach(function(line) {
+        if (line.length === 0) return;
+        var match = line.match(/^([^:]+):(.+)$/);
+        assert.isNotNull(match, 'Unable to parse key-value encoded response: ' + res.text);
+        params['openid.' + match[1]] = match[2];
+    });
+    return params;
+}
+
+function parseIndirectResponseParams(res) {
     return url.parse(res.get('location'), true).query;
 }
 
-function standardExpectations(res) {
-    // TODO this only handles 302-type responses
-    var reqQuery = url.parse(res.req.path, true).query;
+function standardExpectations(reqParams) {
+    return function(res) {
+        // Support discovery queries which aren't standard OpenID queries
+        if (!reqParams['openid.ns']) return;
 
-    // Support discovery queries which aren't standard OpenID queries
-    if (!reqQuery['openid.ns']) return;
+        var commType = calculateCommType(res, reqParams['openid.mode']),
+            resParams;
 
-    var resQuery = responseQuery(res);
+        if (commType == 'indirect') {
+            resParams = parseIndirectResponseParams(res);
+            if (res.status !== 302) return errorMessage('HTTP result code', res.status, 302);
+        } else if (commType == 'direct') {
+            resParams = parseDirectResponseParams(res);
+            if (res.status === 302) return 'HTTP result code should not be 302 for direct responses';
+        } else {
+            return 'Could not determing communication type (direct/indirect)'
+        }
 
-    if (resQuery['openid.ns'] !== OPENID_NS) return errorMessage('openid.ns', resQuery, OPENID_NS);
-    if (!resQuery['openid.mode']) return errorMessage('openid.mode', resQuery, 'a value');
+        var responseMode = resParams['openid.mode'];
 
-    var expectations = expectationsByMode[resQuery['openid.mode']];
-    assert.isFunction(expectations, 'Response mode ' + resQuery['openid.mode'] + ' has no expectations defined');
-    return expectations(res.req, res, reqQuery, resQuery);
+        // Attach the request and response params to the res object for later expectations to use
+        res.reqParams = reqParams;
+        res.resParams = resParams;
+
+        if (resParams['openid.ns'] !== OPENID_NS) return errorMessage('openid.ns', resParams, OPENID_NS);
+
+        if (commType == 'indirect') {
+            if (!responseMode) return errorMessage('openid.mode', resParams, 'a value');
+        } else {
+            // Direct error responses (400's) don't explicitly include the 'openid.mode' parameter
+            if (res.status == 400) responseMode = 'error';
+        }
+
+        var expectations = expectationsByMode[responseMode];
+        assert.isFunction(expectations, 'Response mode ' + responseMode + ' has no expectations defined');
+        return expectations(res.req, res, reqParams, resParams);
+    }
 }
 
 var expectationsByMode = {
-    'id_res': function(req, res, reqQuery, resQuery) {
-        if (resQuery['openid.op_endpoint'] !== endpoint) return errorMessage('openid.op_endpoint', resQuery, endpoint);
-        if (resQuery['openid.return_to'] !== reqQuery['openid.return_to']) return errorMessage('openid.return_to', resQuery, reqQuery['openid.return_to']);
-        if (!resQuery['openid.assoc_handle']) return errorMessage('openid.assoc_handle', resQuery, 'a value');
-        if (!resQuery['openid.sig']) return errorMessage('openid.sig', resQuery, 'a value');
+    'id_res': function(req, res, reqParams, resParams) {
+        if (resParams['openid.op_endpoint'] !== endpoint) return errorMessage('openid.op_endpoint', resParams, endpoint);
+        if (resParams['openid.return_to'] !== reqParams['openid.return_to']) return errorMessage('openid.return_to', resParams, reqParams['openid.return_to']);
+        if (!resParams['openid.assoc_handle']) return errorMessage('openid.assoc_handle', resParams, 'a value');
+        if (!resParams['openid.sig']) return errorMessage('openid.sig', resParams, 'a value');
 
-        if (!resQuery['openid.response_nonce']) return errorMessage('openid.response_nonce', resQuery, 'a value');
-        var nonce = resQuery['openid.response_nonce'],
+        if (!resParams['openid.response_nonce']) return errorMessage('openid.response_nonce', resParams, 'a value');
+        var nonce = resParams['openid.response_nonce'],
             nonceTime = Date.parse(nonce.substr(0, 20)),
             nonceTimezone = nonce.charAt(19),
             nonceAppendix = nonce.substr(20);
@@ -197,16 +254,16 @@ var expectationsByMode = {
         if (nonceTimezone !== 'Z') return errorMessage('Nonce timezone', nonceTimezone, 'Z');
         if (nonceAppendix.length < 1) return errorMessage('None appendix', 'empty', 'a value');
 
-        if (!resQuery['openid.signed']) return errorMessage('openid.signed', resQuery, 'a value');
-        var signed = resQuery['openid.signed'].split(',');
+        if (!resParams['openid.signed']) return errorMessage('openid.signed', resParams, 'a value');
+        var signed = resParams['openid.signed'].split(',');
         if (signed.indexOf('op_endpoint') == -1) return 'Signed fields must include op_endpoint';
         if (signed.indexOf('return_to') == -1) return 'Signed fields must include return_to';
         if (signed.indexOf('response_nonce') == -1) return 'Signed fields must include response_nonce';
         if (signed.indexOf('assoc_handle') == -1) return 'Signed fields must include assoc_handle';
-        if (resQuery['openid.claimed_id'] && signed.indexOf('claimed_id') == -1) return 'Signed fields must include claimed_id when claimed_id is present';
-        if (resQuery['openid.identity'] && signed.indexOf('identity') == -1) return 'Signed fields must include identity when identity is present';
+        if (resParams['openid.claimed_id'] && signed.indexOf('claimed_id') == -1) return 'Signed fields must include claimed_id when claimed_id is present';
+        if (resParams['openid.identity'] && signed.indexOf('identity') == -1) return 'Signed fields must include identity when identity is present';
     },
-    'cancel': function(req, res, reqQuery, resQuery) {},
-    'setup_needed': function(req, res, reqQuery, resQuery) {},
-    'error': function(req, res, reqQuery, resQuery) {}
+    'cancel': function(req, res, reqParams, resParams) {},
+    'setup_needed': function(req, res, reqParams, resParams) {},
+    'error': function(req, res, reqParams, resParams) {}
 }
