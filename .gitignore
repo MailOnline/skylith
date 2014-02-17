@@ -1,2 +1,6 @@
 npm-debug.log
 node_modules
+.floo*
+FLOOBITS_README.md
+coverage
+libpeerconnection.log
