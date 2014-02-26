@@ -8,7 +8,7 @@ var express = require('express'),
     skylith = new Skylith({ providerEndpoint: endpoint, checkAuth: checkAuthDelegate }),
     app = express();
 
-var OPENID_NS = 'http://specs.openid.net/auth/2.0'
+var OPENID_NS = 'http://specs.openid.net/auth/2.0',
     HEADER_DELEGATED = 'X-SkylithTests-Delegated',
     HEADER_DELEGATED_METHOD = 'X-SkylithTests-Method';
 
@@ -41,6 +41,7 @@ exports = module.exports = {
     checkAuth: checkAuth,
     openIdFields: openIdFields,
     isDelegated: isDelegated,
+    dumpResponse: dumpResponse,
     identity: function(name) { return endpoint + '?u=' + encodeURIComponent(name); }
 }
 
@@ -102,6 +103,20 @@ function calculateCommType(res, requestMode) {
     }
 
     return commType;
+}
+
+function dumpResponse() {
+    return function(res) {
+        var commType = calculateCommType(res, res.reqParams['openid.mode']);
+
+        if (commType == 'indirect') {
+            console.log(parseIndirectResponseParams(res));
+        } else if (commType == 'direct') {
+            console.log(parseDirectResponseParams(res));
+        } else {
+            return 'Could not determing communication type (direct/indirect)'
+        }
+    }
 }
 
 function error(message) {
@@ -198,6 +213,8 @@ function parseIndirectResponseParams(res) {
     return url.parse(res.get('location'), true).query;
 }
 
+// Standard expectations are asserted on ALL responses; whilst this hides some of the testing
+// detail, it also ensures that expectations are applied consistently
 function standardExpectations(reqParams) {
     return function(res) {
         // Support discovery queries which aren't standard OpenID queries
@@ -228,7 +245,12 @@ function standardExpectations(reqParams) {
             if (!responseMode) return errorMessage('openid.mode', resParams, 'a value');
         } else {
             // Direct error responses (400's) don't explicitly include the 'openid.mode' parameter
-            if (res.status == 400) responseMode = 'error';
+            if (res.status == 400) {
+                responseMode = 'error';
+            } else {
+                // Fake the mode to be <request mode>-response
+                responseMode = reqParams['openid.mode'] + '-response';
+            }
         }
 
         var expectations = expectationsByMode[responseMode];
@@ -265,5 +287,14 @@ var expectationsByMode = {
     },
     'cancel': function(req, res, reqParams, resParams) {},
     'setup_needed': function(req, res, reqParams, resParams) {},
-    'error': function(req, res, reqParams, resParams) {}
+    'error': function(req, res, reqParams, resParams) {},
+    'associate-response': function(req, res, reqParams, resParams) {
+        if (!resParams['openid.assoc_handle']) return errorMessage('openid.assoc_handle', resParams, 'a value');
+        if (!/^[\x21-\x7e]{1,255}$/.test(resParams['openid.assoc_handle'])) return 'openid.assoc_handle is not valid';
+        if (resParams['openid.session_type'] !== reqParams['openid.session_type']) return errorMessage('openid.session_type', resParams, reqParams['openid.session_type']);
+        if (resParams['openid.assoc_type'] !== reqParams['openid.assoc_type']) return errorMessage('openid.assoc_type', resParams, reqParams['openid.assoc_type']);
+        if (!(+resParams['openid.expires_in'])) return errorMessage('openid.expires_in', resParams, 'a number');
+
+        // mac_key, dh_server_public, enc_mac_key - depending on session_type
+    }
 }
