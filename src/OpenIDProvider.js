@@ -204,75 +204,6 @@ class OpenIDProvider {
     return this.unsupportedAssociation(res, 'Session type not recognised: ' + request.session_type);
   }
 
-  async unencryptedAssociation (request, res, next) {
-    try {
-      const {hashAlgorithm, macBuffer} = await this.constructor.createMac(request.assoc_type);
-
-      if (!macBuffer) {
-        return this.unsupportedAssociation(res, 'Association type not recognised: ' + request.assoc_type);
-      }
-
-      const association = new Association(hashAlgorithm, macBuffer.toString('base64'), this.associationExpirySecs, false);
-
-      try {
-        await this.associationStore.put(association);
-
-        /* eslint-disable id-match */
-        const response = {
-          assoc_handle: association.handle,
-          assoc_type: request.assoc_type,
-          expires_in: this.associationExpirySecs,
-          mac_key: macBuffer.toString('base64'),
-          session_type: request.session_type
-        };
-        /* eslint-enable id-match */
-
-        return this.constructor.sendDirectResponse(res, response);
-      } catch (error) {
-        return this.constructor.internalError(error, res, next);
-      }
-    } catch (error) {
-      return this.constructor.internalError(error, res, next);
-    }
-  }
-
-  async diffieHellmanAssociate (request, res, dhHash, next) {
-    try {
-      const {hashAlgorithm, macBuffer} = await this.constructor.createMac(request.assoc_type);
-
-      if (!macBuffer) {
-        return this.unsupportedAssociation(res, 'Association type not recognised: ' + request.assoc_type);
-      }
-
-      const dh = crypto.createDiffieHellman(request.dh_modulus || DH_MODULUS_ENCODED, 'base64');
-      const publicKeyBase64 = this.constructor.btwoc(dh.generateKeys()).toString('base64');
-      const secretKeyBinary = dh.computeSecret(request.dh_consumer_public, 'base64');
-      const hash = crypto.createHash(hashAlgorithm);
-
-      hash.update(this.constructor.btwoc(secretKeyBinary));
-
-      const association = new Association(hashAlgorithm, macBuffer.toString('base64'), this.associationExpirySecs, false);
-      const encodedMac = this.constructor.xor(hash.digest(), macBuffer);
-
-      await this.associationStore.put(association);
-
-      /* eslint-disable id-match */
-      const response = {
-        assoc_handle: association.handle,
-        assoc_type: request.assoc_type,
-        dh_server_public: publicKeyBase64,
-        enc_mac_key: encodedMac.toString('base64'),
-        expires_in: this.associationExpirySecs,
-        session_type: request.session_type
-      };
-      /* eslint-enable id-match */
-
-      return this.constructor.sendDirectResponse(res, response);
-    } catch (error) {
-      return this.constructor.internalError(error, res, next);
-    }
-  }
-
   unsupportedAssociation (res, message) {
     // 8.2.4
     /* eslint-disable id-match */
@@ -531,6 +462,75 @@ class OpenIDProvider {
     return checkAssociation();
   }
 
+  async unencryptedAssociation (request, res, next) {
+    try {
+      const {hashAlgorithm, macBuffer} = await this.constructor.createMac(request.assoc_type);
+
+      if (!macBuffer) {
+        return this.unsupportedAssociation(res, 'Association type not recognised: ' + request.assoc_type);
+      }
+
+      const association = new Association(hashAlgorithm, macBuffer.toString('base64'), this.associationExpirySecs, false);
+
+      try {
+        await this.associationStore.put(association);
+
+        /* eslint-disable id-match */
+        const response = {
+          assoc_handle: association.handle,
+          assoc_type: request.assoc_type,
+          expires_in: this.associationExpirySecs,
+          mac_key: macBuffer.toString('base64'),
+          session_type: request.session_type
+        };
+        /* eslint-enable id-match */
+
+        return this.constructor.sendDirectResponse(res, response);
+      } catch (error) {
+        return this.constructor.internalError(error, res, next);
+      }
+    } catch (error) {
+      return this.constructor.internalError(error, res, next);
+    }
+  }
+
+  async diffieHellmanAssociate (request, res, dhHash, next) {
+    try {
+      const {hashAlgorithm, macBuffer} = await this.constructor.createMac(request.assoc_type);
+
+      if (!macBuffer) {
+        return this.unsupportedAssociation(res, 'Association type not recognised: ' + request.assoc_type);
+      }
+
+      const dh = crypto.createDiffieHellman(request.dh_modulus || DH_MODULUS_ENCODED, 'base64');
+      const publicKeyBase64 = this.constructor.btwoc(dh.generateKeys()).toString('base64');
+      const secretKeyBinary = dh.computeSecret(request.dh_consumer_public, 'base64');
+      const hash = crypto.createHash(hashAlgorithm);
+
+      hash.update(this.constructor.btwoc(secretKeyBinary));
+
+      const association = new Association(hashAlgorithm, macBuffer.toString('base64'), this.associationExpirySecs, false);
+      const encodedMac = this.constructor.xor(hash.digest(), macBuffer);
+
+      await this.associationStore.put(association);
+
+      /* eslint-disable id-match */
+      const response = {
+        assoc_handle: association.handle,
+        assoc_type: request.assoc_type,
+        dh_server_public: publicKeyBase64,
+        enc_mac_key: encodedMac.toString('base64'),
+        expires_in: this.associationExpirySecs,
+        session_type: request.session_type
+      };
+      /* eslint-enable id-match */
+
+      return this.constructor.sendDirectResponse(res, response);
+    } catch (error) {
+      return this.constructor.internalError(error, res, next);
+    }
+  }
+
   async checkAuthentication (request, req, res, next) {
     const sendError = () => this.constructor.sendDirectResponse(res, {
       // eslint-disable-next-line id-match
@@ -585,27 +585,6 @@ class OpenIDProvider {
     } catch (error) {
       return this.constructor.internalError(error, res, next);
     }
-  }
-
-  static async createMac (assocType) {
-    if (assocType === 'HMAC-SHA1') {
-      const macBuffer = await randomBytesAsync(20);
-
-      return {
-        hashAlgorithm: 'sha1',
-        macBuffer
-      };
-    } else if (assocType === 'HMAC-SHA256') {
-      const macBuffer = await randomBytesAsync(32);
-
-      return {
-        hashAlgorithm: 'sha256',
-        macBuffer
-      };
-    }
-
-    // pass undefined buffer back to caller
-    return Promise.resolve();
   }
 
   // 4.2
@@ -684,6 +663,28 @@ class OpenIDProvider {
     res.send(500, err.message || err);
 
     return next ? next(err) : null;
+  }
+
+  static async createMac (assocType) {
+    switch (assocType) {
+    case 'HMAC-SHA1': {
+      const macBuffer = await randomBytesAsync(20);
+
+      return {
+        hashAlgorithm: 'sha1',
+        macBuffer
+      };
+    }
+    case 'HMAC-SHA256': {
+      const macBuffer = await randomBytesAsync(32);
+
+      return {
+        hashAlgorithm: 'sha256',
+        macBuffer
+      };
+    }
+    default: return Promise.resolve();
+    }
   }
 }
 
