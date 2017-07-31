@@ -12,28 +12,26 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-// TODO: periodically clean up expired associations
+// TODO: periodically clean up expired nonces
 
-function MemoryAssociationStore() {
-    if (!(this instanceof MemoryAssociationStore)) {
-        return new MemoryAssociationStore();
-    }
+class MemoryNonceStore {
+  constructor () {
+    this.nonces = {};
+  }
 
-    var associations = {};
+  put (nonce) {
+    this.nonces[nonce.id] = nonce;
 
-    this.put = function(association, next) {
-        associations[association.handle] = association;
-        next(null);
-    }
+    return Promise.resolve();
+  }
 
-    this.get = function(handle, next) {
-        next(null, associations[handle]);
-    }
+  getAndDelete (id) {
+    const nonce = this.nonces[id];
 
-    this.delete = function(handle, next) {
-        delete associations[handle];
-        next(null);
-    }
+    delete this.nonces[id];
+
+    return Promise.resolve(nonce);
+  }
 }
 
-exports = module.exports = MemoryAssociationStore;
+module.exports = MemoryNonceStore;

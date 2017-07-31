@@ -9,29 +9,42 @@
       "url": "http://www.apache.org/licenses/LICENSE-2.0"
     }
   ],
-  "main": "skylith.js",
+  "main": "./src/OpenIDProvider.js",
   "scripts": {
-    "test": "NODE_ENV=test mocha",
-    "coverage": "NODE_ENV=test istanbul cover _mocha"
+    "test": "_mocha --reporter tap './test/**/*.spec.js'",
+    "test-cover": "nyc npm test",
+    "build": "echo 'this project has no build'; exit 0;",
+    "lint": "eslint --ignore-path .gitignore '**/*.js'",
+    "precommit": "npm run lint",
+    "prepush": "npm run test",
+    "preversion": "npm run lint && npm run test && npm run build",
+    "postversion": "git push && git push --tags && npm publish"
   },
   "repository": "https://github.com/codeaholics/skylith.git",
   "keywords": [
     "openid",
     "provider"
   ],
-  "bugs": {
-    "url": "https://github.com/codeaholics/skylith/issues"
-  },
   "devDependencies": {
-    "mocha": "~1.12.1",
     "chai": "~1.7.2",
-    "express": "~3.4.7",
-    "supertest": "~0.9.0",
     "cheerio": "~0.13.1",
-    "istanbul": "~0.2.4"
+    "eslint": "^4.3.0",
+    "express": "~3.4.7",
+    "husky": "^0.14.3",
+    "istanbul": "~0.2.4",
+    "mocha": "~1.12.1",
+    "mol-conventional-changelog": "^1.2.0",
+    "stylelint-config-mailonline": "^3.0.0",
+    "supertest": "~0.9.0"
   },
   "dependencies": {
-    "valid-url": "~1.0.9",
-    "uri-js": "~1.4.2"
+    "uri-js": "~1.4.2",
+    "url": "^0.11.0",
+    "valid-url": "~1.0.9"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/mol-conventional-changelog"
+    }
   }
 }

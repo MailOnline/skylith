@@ -1,0 +1,7 @@
+{
+  "extends": "mailonline",
+  "rules": {
+    "filenames/match-regex": "off",
+    "import/no-commonjs": "off"
+  }
+}
