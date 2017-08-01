@@ -35,7 +35,7 @@ const skylith = new Skylith({
 });
 const app = express();
 
-app.use(bodyParser.urlencoded());
+app.use(bodyParser.urlencoded({extended: false}));
 app.use('/openid', skylith.express());
 
 app.all('/openid', handleDelegated);
