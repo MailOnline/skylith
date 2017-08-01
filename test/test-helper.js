@@ -1,5 +1,6 @@
 const {parse} = require('url');
 const express = require('express');
+const bodyParser = require('body-parser');
 const request = require('supertest');
 const {assert} = require('chai');
 const Skylith = require('../src/OpenIDProvider');
@@ -34,9 +35,8 @@ const skylith = new Skylith({
 });
 const app = express();
 
-app.use(express.urlencoded());
+app.use(bodyParser.urlencoded());
 app.use('/openid', skylith.express());
-app.use(app.router);
 
 app.all('/openid', handleDelegated);
 app.all('/openid/*', handleDelegated);

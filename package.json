@@ -26,18 +26,20 @@
     "provider"
   ],
   "devDependencies": {
-    "chai": "~1.7.2",
-    "cheerio": "~0.13.1",
+    "body-parser": "^1.17.2",
+    "chai": "^4.1.0",
+    "cheerio": "^1.0.0-rc.2",
+    "cookie-parser": "^1.4.3",
     "eslint": "^4.3.0",
-    "express": "~3.4.7",
+    "express": "^4.15.3",
     "husky": "^0.14.3",
-    "istanbul": "~0.2.4",
-    "mocha": "~1.12.1",
+    "mocha": "^3.5.0",
     "mol-conventional-changelog": "^1.2.0",
-    "stylelint-config-mailonline": "^3.0.0",
-    "supertest": "~0.9.0"
+    "nyc": "^11.1.0",
+    "supertest": "^3.0.0"
   },
   "dependencies": {
+    "eslint-config-mailonline": "^7.1.0",
     "uri-js": "~1.4.2",
     "url": "^0.11.0",
     "valid-url": "~1.0.9"

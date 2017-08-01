@@ -184,7 +184,7 @@ class OpenIDProvider {
     }
 
     // "Not acceptable"
-    return res.send(406);
+    return res.sendStatus(406);
   }
 
   associate (request, req, res, next) {

@@ -11,36 +11,58 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+const express = require('express');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const Skylith = require('../skylith');
 
-let PORT = process.env.PORT || 3000,
-  ADDRESS = 'http://localhost:' + PORT + '/',
-  PROVIDER_ENDPOINT = ADDRESS + 'openid';
+// eslint-disable-next-line no-process-env
+const PORT = process.env.PORT || 3000;
+const ADDRESS = 'http://localhost:' + PORT + '/';
+const PROVIDER_ENDPOINT = ADDRESS + 'openid';
 
-let express = require('express'),
-  Skylith = require('../skylith'),
-  skylith = new Skylith({
-    providerEndpoint: PROVIDER_ENDPOINT,
-    checkAuth
-  });
+const checkAuth = (req, res, allowInteraction, context) => {
+  // Skylith wants to know if the user is already logged in or not. Check your session/cookies/whatever.
+  // * If the user is already logged in, call skylith.completeAuth()
+  // * If the user is NOT logged in and allowInteraction is true, store context somewhere (suggest not
+  //   in a cookie because it can be quite big), prompt the user to login and when they're done call
+  //   skylith.completeAuth()
+  // * If the user is NOT logged in and allowInteraction is false, call skylith.rejectAuth()
+
+  // This example assumes you're not already logged in
+  if (allowInteraction) {
+    req.session.skylith = context;
+    res.redirect(302, '/login');
+  }
+
+  // TODO - else -> check_immediate isn't implemented yet
+};
+
+const skylith = new Skylith({
+  checkAuth,
+  providerEndpoint: PROVIDER_ENDPOINT
+});
 
 const app = express();
 
-app.use(express.urlencoded());
-app.use(express.cookieParser());
+app.use(bodyParser.urlencoded());
+app.use(cookieParser());
 app.use(express.session({
+  cookie: {
+    httpOnly: true,
+
+    // We use sessions for maintaining state between Skylith calls so this can be quite short
+    maxAge: 1 * 60 * 1000,
+    signed: true
+  },
   key: 's',
 
   // store: we're using the default memory store here. Don't use that in production! See http://www.senchalabs.org/connect/session.html#warning
-  secret: 'some big secret for signed cookies',
-  cookie: {
-    signed: true,
-    httpOnly: true,
-    maxAge: 1 * 60 * 1000 // We use sessions for maintaining state between Skylith calls so this can be quite short
-  }
+  secret: 'some big secret for signed cookies'
 }));
 app.use('/openid', skylith.express());
 
-app.get('/login', (req, res, next) => {
+app.get('/login', (req, res) => {
   // Inspect 'ax' in the stored context to see which attributes the RP is requesting.
   // You SHOULD prompt the user to release these attributes. The suggested flow here is
   // to authenticate the user (login), and then on a subsequent page request
@@ -64,43 +86,27 @@ app.post('/login', (req, res, next) => {
     // conjunction with the 'ax' attribute in the stored context to see what (if any)
     // attributes the Relying Party wants):
     const axResponse = {
-      'http://axschema.org/namePerson/friendly': req.body.username,
       'http://axschema.org/contact/email': req.body.username.toLowerCase() + '@example.com',
-      'http://axschema.org/namePerson': req.body.username + ' Smith'
+      'http://axschema.org/namePerson': req.body.username + ' Smith',
+      'http://axschema.org/namePerson/friendly': req.body.username
     };
 
     const authResponse = {
+      ax: axResponse,
       context: req.session.skylith,
-      identity: req.body.username,
-      ax: axResponse
+      identity: req.body.username
     };
 
-    skylith.completeAuth(req, res, authResponse);
+    return skylith.completeAuth(req, res, authResponse);
   } else if ('cancel' in req.body) {
     // User cancelled authentication
-    skylith.rejectAuth(req, res, req.session.skylith);
-  } else {
-    next();
+    return skylith.rejectAuth(req, res, req.session.skylith);
   }
+
+  return next();
 });
 
 app.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log('Running on ' + ADDRESS);
 });
-
-function checkAuth (req, res, allowInteraction, context) {
-  // Skylith wants to know if the user is already logged in or not. Check your session/cookies/whatever.
-  // * If the user is already logged in, call skylith.completeAuth()
-  // * If the user is NOT logged in and allowInteraction is true, store context somewhere (suggest not
-  //   in a cookie because it can be quite big), prompt the user to login and when they're done call
-  //   skylith.completeAuth()
-  // * If the user is NOT logged in and allowInteraction is false, call skylith.rejectAuth()
-
-  // This example assumes you're not already logged in
-  if (allowInteraction) {
-    req.session.skylith = context;
-    res.redirect(302, '/login');
-  } else {
-    // TODO - check_immediate isn't implemented yet
-  }
-}

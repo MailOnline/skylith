@@ -1,10 +1,24 @@
-let util = require('util'),
-  cheerio = require('cheerio'),
-  chai = require('chai'),
-  assert = chai.assert;
+const util = require('util');
+const cheerio = require('cheerio');
+const chai = require('chai');
+const testHelper = require('./test-helper');
 
-let testHelper = require('./test-helper'),
-  endpoint = testHelper.endpoint;
+const assert = chai.assert;
+const endpoint = testHelper.endpoint;
+
+const XRDSTemplate = `<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS xmlns:xrds="xri://$xrds" xmlns="xri://$xrd*($v*2.0)">
+<XRD>
+<Service priority="0">
+<Type>http://specs.openid.net/auth/2.0/%s</Type>
+<Type>http://openid.net/srv/ax/1.0</Type>
+<URI>%s</URI>
+</Service>
+</XRD>
+</xrds:XRDS>
+`;
+
+const getExpectedXRDSDocument = (type) => util.format(XRDSTemplate, type, endpoint);
 
 describe('Discovery', () => {
   describe('XRDS', () => {
@@ -33,7 +47,7 @@ describe('Discovery', () => {
         .get('/openid')
         .accept('text/html')
         .expect(200)
-        .expect('Content-Type', 'text/html')
+        .expect('Content-Type', 'text/html; charset=utf-8')
         .expect((res) => {
           const $ = cheerio.load(res.text);
 
@@ -48,7 +62,7 @@ describe('Discovery', () => {
         .get('/openid?u=charlie')
         .accept('text/html')
         .expect(200)
-        .expect('Content-Type', 'text/html')
+        .expect('Content-Type', 'text/html; charset=utf-8')
         .expect((res) => {
           const $ = cheerio.load(res.text);
 
@@ -67,19 +81,3 @@ describe('Discovery', () => {
       .end(done);
   });
 });
-
-const XRDSTemplate = `<?xml version="1.0" encoding="UTF-8"?>
-<xrds:XRDS xmlns:xrds="xri://$xrds" xmlns="xri://$xrd*($v*2.0)">
-<XRD>
-<Service priority="0">
-<Type>http://specs.openid.net/auth/2.0/%s</Type>
-<Type>http://openid.net/srv/ax/1.0</Type>
-<URI>%s</URI>
-</Service>
-</XRD>
-</xrds:XRDS>
-`;
-
-function getExpectedXRDSDocument (type) {
-  return util.format(XRDSTemplate, type, endpoint);
-}

@@ -1,6 +1,7 @@
-let testHelper = require('./test-helper'),
-  isDelegated = testHelper.isDelegated,
-  error = testHelper.error;
+const testHelper = require('./test-helper');
+
+const isDelegated = testHelper.isDelegated;
+const error = testHelper.error;
 
 describe('Middleware', () => {
   it('delegates non-OpenId POST requests', (done) => {
@@ -11,7 +12,8 @@ describe('Middleware', () => {
   });
 
   it('delegates non-OpenId GET requests which are not discovery', (done) => {
-    testHelper.get('/openid/login') // Discovery is assumed for all GETs on the mount point
+    // Discovery is assumed for all GETs on the mount point
+    testHelper.get('/openid/login')
       .expect(404)
       .expect(isDelegated())
       .end(done);
@@ -28,6 +30,7 @@ describe('Middleware', () => {
   it('sends an indirect error response for unrecognised GET requests', (done) => {
     testHelper.get('/openid', {
       mode: 'badmode',
+      // eslint-disable-next-line id-match
       return_to: 'http://localhost/here'
     })
       .expect(error('Unknown or unsupported indirect request'))

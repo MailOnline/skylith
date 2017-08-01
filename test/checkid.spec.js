@@ -1,10 +1,7 @@
-let chai = require('chai'),
-  assert = chai.assert;
+const testHelper = require('./test-helper');
 
-let testHelper = require('./test-helper'),
-  endpoint = testHelper.endpoint,
-  openIdFields = testHelper.openIdFields,
-  checkAuth = testHelper.checkAuth;
+const openIdFields = testHelper.openIdFields;
+const checkAuth = testHelper.checkAuth;
 
 describe('checkid_setup/checkid_immediate: main flow', () => {
   ['get', 'post'].forEach((verb) => {
@@ -12,17 +9,19 @@ describe('checkid_setup/checkid_immediate: main flow', () => {
       testHelper[verb]('/openid', {
         mode: 'checkid_setup',
         realm: 'http://localhost/',
+        // eslint-disable-next-line id-match
         return_to: 'http://localhost/here'
       })
         .expect(302)
         .expect(checkAuth({
-          identity: 'bob@example.com',
-          ensureInteractive: true
+          ensureInteractive: true,
+          identity: 'bob@example.com'
         }))
         .expect(openIdFields({
-          mode: 'id_res',
+          // eslint-disable-next-line id-match
           claimed_id: testHelper.identity('bob@example.com'),
-          identity: testHelper.identity('bob@example.com')
+          identity: testHelper.identity('bob@example.com'),
+          mode: 'id_res'
         }))
         .end(done);
     });
@@ -31,13 +30,14 @@ describe('checkid_setup/checkid_immediate: main flow', () => {
       testHelper[verb]('/openid', {
         mode: 'checkid_setup',
         realm: 'http://localhost/',
+        // eslint-disable-next-line id-match
         return_to: 'http://localhost/here'
       })
         .expect(302)
         .expect(checkAuth({
-          succeed: false,
+          ensureInteractive: true,
           identity: 'bob@example.com',
-          ensureInteractive: true
+          succeed: false
         }))
         .expect(openIdFields({
           mode: 'cancel'
@@ -49,17 +49,19 @@ describe('checkid_setup/checkid_immediate: main flow', () => {
       testHelper[verb]('/openid', {
         mode: 'checkid_immediate',
         realm: 'http://localhost/',
+        // eslint-disable-next-line id-match
         return_to: 'http://localhost/here'
       })
         .expect(302)
         .expect(checkAuth({
-          identity: 'bob@example.com',
-          ensureInteractive: false
+          ensureInteractive: false,
+          identity: 'bob@example.com'
         }))
         .expect(openIdFields({
-          mode: 'id_res',
+          // eslint-disable-next-line id-match
           claimed_id: testHelper.identity('bob@example.com'),
-          identity: testHelper.identity('bob@example.com')
+          identity: testHelper.identity('bob@example.com'),
+          mode: 'id_res'
         }))
         .end(done);
     });
@@ -68,13 +70,14 @@ describe('checkid_setup/checkid_immediate: main flow', () => {
       testHelper[verb]('/openid', {
         mode: 'checkid_immediate',
         realm: 'http://localhost/',
+        // eslint-disable-next-line id-match
         return_to: 'http://localhost/here'
       })
         .expect(302)
         .expect(checkAuth({
-          succeed: false,
+          ensureInteractive: false,
           identity: 'bob@example.com',
-          ensureInteractive: false
+          succeed: false
         }))
         .expect(openIdFields({
           mode: 'setup_needed'
