@@ -31,7 +31,7 @@
     "istanbul": "~0.2.4"
   },
   "dependencies": {
-    "valid-url": "~1.0.9",
-    "uri-js": "~1.4.2"
+    "uri-js": "^4.2.2",
+    "valid-url": "~1.0.9"
   }
 }
