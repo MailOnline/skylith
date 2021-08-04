@@ -18,7 +18,9 @@
     "precommit": "npm run lint",
     "prepush": "npm run test",
     "preversion": "npm run lint && npm run test && npm run build",
-    "postversion": "git push && git push --tags && npm publish"
+    "postversion": "git push && git push --tags && npm publish",
+    "prepare": "npm run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "repository": "https://github.com/codeaholics/skylith.git",
   "keywords": [
@@ -26,27 +28,29 @@
     "provider"
   ],
   "devDependencies": {
-    "body-parser": "^1.17.2",
+    "body-parser": "^1.18.2",
     "chai": "^4.1.0",
     "cheerio": "^1.0.0-rc.2",
     "cookie-parser": "^1.4.3",
-    "eslint": "^4.3.0",
-    "express": "^4.15.3",
+    "eslint": "^5.0.0",
+    "express": "^4.16.0",
     "husky": "^0.14.3",
-    "mocha": "^3.5.0",
+    "mocha": "^6.2.3",
     "mol-conventional-changelog": "^1.2.0",
-    "nyc": "^11.1.0",
+    "nyc": "^14.0.0",
     "supertest": "^3.0.0"
   },
   "dependencies": {
     "eslint-config-mailonline": "^7.1.0",
     "uri-js": "~1.4.2",
     "url": "^0.11.0",
-    "valid-url": "~1.0.9"
+    "valid-url": "~1.0.9",
+    "@snyk/protect": "latest"
   },
   "config": {
     "commitizen": {
       "path": "./node_modules/mol-conventional-changelog"
     }
-  }
+  },
+  "snyk": true
 }
