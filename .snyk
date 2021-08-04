@@ -1,0 +1,70 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.21.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - express > finalhandler > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+    - eslint > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-source-maps > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+    - supertest > superagent > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-traverse > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-template > babel-traverse > debug:
+        patched: '2021-08-04T19:08:42.501Z'
+  'npm:extend:20180424':
+    - supertest > superagent > extend:
+        patched: '2021-08-04T19:08:42.501Z'
+  SNYK-JS-LODASH-567746:
+    - cheerio > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - eslint > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - eslint > inquirer > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > inquirer > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - eslint > table > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > inquirer > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-types > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-traverse > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > conventional-changelog-cli > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-generator > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-template > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-traverse > babel-types > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-generator > babel-types > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-template > babel-types > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-template > babel-traverse > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > conventional-recommended-bump > conventional-commits-parser > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - nyc > istanbul-lib-instrument > babel-template > babel-traverse > babel-types > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > conventional-changelog-cli > conventional-changelog > conventional-changelog-core > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > conventional-changelog-cli > conventional-changelog > conventional-changelog-core > conventional-changelog-writer > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+    - mol-conventional-changelog > lerna > conventional-changelog-cli > conventional-changelog > conventional-changelog-core > conventional-commits-parser > lodash:
+        patched: '2021-08-04T19:08:42.501Z'
+  'npm:mime:20170907':
+    - supertest > superagent > mime:
+        patched: '2021-08-04T19:08:42.501Z'
+  'npm:moment:20170905':
+    - mol-conventional-changelog > lerna > strong-log-transformer > moment:
+        patched: '2021-08-04T19:08:42.501Z'
