@@ -34,12 +34,12 @@
     "express": "^4.15.3",
     "husky": "^0.14.3",
     "mocha": "^3.5.0",
-    "mol-conventional-changelog": "^1.2.0",
+    "mol-conventional-changelog": "^1.4.0",
     "nyc": "^11.1.0",
     "supertest": "^3.0.0"
   },
   "dependencies": {
-    "eslint-config-mailonline": "^7.1.0",
+    "eslint-config-mailonline": "^9.0.0",
     "uri-js": "~1.4.2",
     "url": "^0.11.0",
     "valid-url": "~1.0.9"
