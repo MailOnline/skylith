@@ -26,12 +26,12 @@
     "provider"
   ],
   "devDependencies": {
-    "body-parser": "^1.17.2",
+    "body-parser": "^1.19.2",
     "chai": "^4.1.0",
     "cheerio": "^1.0.0-rc.2",
     "cookie-parser": "^1.4.3",
     "eslint": "^4.3.0",
-    "express": "^4.15.3",
+    "express": "^4.17.3",
     "husky": "^0.14.3",
     "mocha": "^3.5.0",
     "mol-conventional-changelog": "^1.2.0",
